@@ -97,35 +97,40 @@ const AIChat = () => {
     setInput('');
     setIsTyping(true);
 
-    try {
-      // Use NVIDIA API for real AI responses
-      const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer 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"
-        },
-        body: JSON.stringify({
-          model: "meta/llama-3.1-70b-instruct",
-          messages: [
-            { role: "system", content: "You are StudySphere AI, a helpful, encouraging, and knowledgeable AI study companion. Provide clear, educational answers formatted beautifully in Markdown." },
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-            { role: "user", content: input }
-          ],
-          temperature: 0.7,
-          max_tokens: 1024,
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      let aiResponse = data.choices?.[0]?.message?.content;
-
-      if (!aiResponse) {
-        aiResponse = "I'm sorry, I couldn't generate a response. Please try again.";
+    // Simulate AI logic engine
+    setTimeout(() => {
+      const lowerInput = input.toLowerCase();
+      let aiResponse = "I'm a local AI assistant right now! I couldn't find an exact match for your question in my pre-loaded knowledge base. Please try asking one of the provided questions.";
+      
+      // Try to find a match in the qaPairs
+      const match = qaPairs.find(qa => qa.question.toLowerCase().includes(lowerInput) || lowerInput.includes(qa.question.toLowerCase()));
+      
+      if (match) {
+        aiResponse = match.answer;
+      } else {
+        // Fallback exact match or fuzzy match logic if needed, but since we are looking for includes, it's decent.
+        // Let's also do a simple word match if the full phrase is not found
+        const words = lowerInput.split(' ').filter(w => w.length > 3);
+        let bestMatch = null;
+        let bestScore = 0;
+        
+        for (const qa of qaPairs) {
+          const qLower = qa.question.toLowerCase();
+          let score = 0;
+          for (const word of words) {
+            if (qLower.includes(word)) score++;
+          }
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = qa;
+          }
+        }
+        
+        if (bestMatch && bestScore > 0) {
+          aiResponse = bestMatch.answer;
+        } else if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
+          aiResponse = "Hello there! 👋 I am your StudySphere AI tutor. How can I help you study today?";
+        }
       }
 
       const newAssistantMsg: Message = {
@@ -134,17 +139,8 @@ const AIChat = () => {
         content: aiResponse,
       };
       setMessages(prev => [...prev, newAssistantMsg]);
-    } catch (error) {
-      console.error("AI Error:", error);
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "Oops! I encountered an error connecting to my neural network. Please check your internet connection or try again later.",
-      };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
       setIsTyping(false);
-    }
+    }, 1500);
   };
 
   const createNewChat = () => {
