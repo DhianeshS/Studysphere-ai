@@ -59,9 +59,12 @@ const createMockSupabase = () => {
          let user = db.users.find((u: any) => u.email === email);
          if (!user) {
              // Create user on the fly for ease of access with random credentials
-             user = { id: generateId(), email, user_metadata: { full_name: email.split('@')[0] } };
+             const namePrefix = email.split('@')[0];
+             const formattedName = namePrefix.replace(/[._-]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+             
+             user = { id: generateId(), email, user_metadata: { full_name: formattedName } };
              db.users.push(user);
-             db.profiles.push({ id: user.id, display_name: email.split('@')[0] });
+             db.profiles.push({ id: user.id, display_name: formattedName });
              saveDb(db);
          }
          currentUser = user;
