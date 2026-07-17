@@ -23,8 +23,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Bypass actual authentication so any random email/password succeeds
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');

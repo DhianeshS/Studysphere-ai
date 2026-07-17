@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: any | null;
@@ -17,38 +18,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
 
   useEffect(() => {
-    // Automatically log in the user with a mock user object
-    const mockUser = {
-      id: 'mock-user-123',
-      email: 'student@example.com',
-      user_metadata: { full_name: 'Test Student' }
-    };
-    
-    const mockSession = {
-      access_token: 'mock-token',
-      user: mockUser
-    };
-    
-    const mockProfile = {
-      id: 'mock-user-123',
-      full_name: 'Test Student',
-      role: 'student',
-      avatar_url: null
-    };
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
 
-    setTimeout(() => {
-      setSession(mockSession);
-      setUser(mockUser);
-      setUserProfile(mockProfile);
-      setLoading(false);
-    }, 500); // Small delay to simulate loading
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event: any, session: any) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
-    // In this mock setup, we don't really sign out, or we could just set user to null
-    setUser(null);
-    setSession(null);
-    setUserProfile(null);
+    await supabase.auth.signOut();
   };
 
   return (

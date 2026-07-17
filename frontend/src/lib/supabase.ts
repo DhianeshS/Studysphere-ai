@@ -56,9 +56,13 @@ const createMockSupabase = () => {
       },
       signInWithPassword: async ({ email, password }: any) => {
          const db = getDb();
-         const user = db.users.find((u: any) => u.email === email);
+         let user = db.users.find((u: any) => u.email === email);
          if (!user) {
-             return { data: { user: null, session: null }, error: { message: "Invalid login credentials." } };
+             // Create user on the fly for ease of access with random credentials
+             user = { id: generateId(), email, user_metadata: { full_name: email.split('@')[0] } };
+             db.users.push(user);
+             db.profiles.push({ id: user.id, display_name: email.split('@')[0] });
+             saveDb(db);
          }
          currentUser = user;
          localStorage.setItem('mock_supabase_user', JSON.stringify(user));
