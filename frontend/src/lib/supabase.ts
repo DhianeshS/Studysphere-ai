@@ -2,7 +2,21 @@
 // This allows the app to function exactly like production without needing API keys.
 // It intercepts all Auth and Database calls and routes them to the browser's localStorage.
 
-const getDb = () => JSON.parse(localStorage.getItem('mock_supabase_db') || '{"users":[], "profiles":[], "documents":[], "study_tasks":[], "notes":[], "flashcards":[], "quizzes":[], "chat_sessions":[]}');
+import flashcardsData from '../data/flashcards150.json';
+
+const getDb = () => {
+  const defaultDb = { users:[], profiles:[], documents:[], study_tasks:[], notes:[], flashcards: flashcardsData, quizzes:[], chat_sessions:[] };
+  try {
+    const local = localStorage.getItem('mock_supabase_db');
+    if (local) {
+      const parsed = JSON.parse(local);
+      // Force update the flashcards with the newly generated definitions
+      parsed.flashcards = flashcardsData;
+      return parsed;
+    }
+  } catch(e) {}
+  return defaultDb;
+};
 const saveDb = (db: any) => localStorage.setItem('mock_supabase_db', JSON.stringify(db));
 
 // Polyfill for randomUUID in case it's not available in older contexts

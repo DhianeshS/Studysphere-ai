@@ -94,7 +94,7 @@ const Flashcards = () => {
 
             {/* 3D Card Container */}
             <div className="perspective-1000 w-full aspect-[3/2] sm:aspect-[2/1] cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-              <div className={`relative w-full h-full transition-all duration-500 preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+              <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                 
                 {/* Front */}
                 <div className="absolute inset-0 backface-hidden glass-card rounded-2xl p-8 flex flex-col items-center justify-center text-center border-t border-l border-white/40 dark:border-slate-700/50 shadow-xl bg-gradient-to-br from-white/60 to-white/30 dark:from-slate-800/60 dark:to-slate-800/30">

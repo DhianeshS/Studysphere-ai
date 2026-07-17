@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DashboardHome = () => {
   const { user, userProfile } = useAuth();
@@ -72,37 +73,63 @@ const DashboardHome = () => {
         </Link>
       </div>
 
-      {/* Widgets Grid - Real data will be populated from analytics table later */}
+      {/* Widgets Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <WidgetCard 
+          to="/dashboard/analytics"
           title="Study Streak" 
-          value="0 Days" 
-          subtitle="Start your streak!" 
-          icon={<Flame className="w-5 h-5 text-muted-foreground" />}
-          trend={null}
+          value="3 Days"
+          subtitle="Keep it up!" 
+          icon={<Flame className="w-5 h-5 text-orange-500" />}
+          trend="+1 from last week"
         />
         <WidgetCard 
+          to="/dashboard/analytics"
           title="Hours Studied" 
-          value="0h" 
+          value="12.5h"
           subtitle="This week" 
-          icon={<Clock className="w-5 h-5 text-muted-foreground" />}
-          trend={null}
+          icon={<Clock className="w-5 h-5 text-blue-500" />}
+          trend="Top 10% of users"
         />
         <WidgetCard 
+          to="/dashboard/analytics"
           title="Quiz Accuracy" 
-          value="0%" 
+          value="84%"
           subtitle="Average score" 
-          icon={<Target className="w-5 h-5 text-muted-foreground" />}
-          trend={null}
+          icon={<Target className="w-5 h-5 text-green-500" />}
+          trend="+4% improvement"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Progress Chart */}
-        <div className="lg:col-span-2 glass-card p-6 flex flex-col items-center justify-center min-h-[300px]">
-          <TrendingUp className="w-12 h-12 text-muted-foreground opacity-20 mb-4" />
-          <p className="text-muted-foreground">Not enough data to display progress chart.</p>
-          <p className="text-sm text-muted-foreground">Start studying to see your analytics!</p>
+        <div className="lg:col-span-2 glass-card p-6 min-h-[300px] flex flex-col">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            Learning Activity
+          </h2>
+          <div className="flex-1 w-full h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[
+                { name: 'Mon', hours: 2.5 },
+                { name: 'Tue', hours: 3.8 },
+                { name: 'Wed', hours: 1.5 },
+                { name: 'Thu', hours: 4.2 },
+                { name: 'Fri', hours: 2.0 },
+                { name: 'Sat', hours: 5.5 },
+                { name: 'Sun', hours: 4.0 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888830" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dx={-10} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  cursor={{ stroke: '#88888830', strokeWidth: 2 }}
+                />
+                <Line type="monotone" dataKey="hours" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Upcoming Tasks */}
@@ -182,22 +209,26 @@ const DashboardHome = () => {
   );
 };
 
-const WidgetCard = ({ title, value, subtitle, icon, trend }: any) => (
-  <div className="glass-card p-6 flex items-start justify-between">
-    <div>
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
-      <h3 className="text-3xl font-bold mt-2">{value}</h3>
-      <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-      {trend && (
-        <p className="text-xs font-medium text-green-600 dark:text-green-400 mt-3 bg-green-500/10 inline-block px-2 py-1 rounded-full">
-          {trend}
-        </p>
-      )}
+const WidgetCard = ({ title, value, subtitle, icon, trend, to }: any) => {
+  const CardContent = (
+    <div className={`glass-card p-6 flex items-start justify-between ${to ? 'hover:border-primary/50 hover:shadow-md cursor-pointer transition-all' : ''}`}>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <h3 className="text-3xl font-bold mt-2">{value}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+        {trend && (
+          <p className="text-xs font-medium text-green-600 dark:text-green-400 mt-3 bg-green-500/10 inline-block px-2 py-1 rounded-full">
+            {trend}
+          </p>
+        )}
+      </div>
+      <div className="p-3 bg-background rounded-xl border shadow-sm">
+        {icon}
+      </div>
     </div>
-    <div className="p-3 bg-background rounded-xl border shadow-sm">
-      {icon}
-    </div>
-  </div>
-);
+  );
+
+  return to ? <Link to={to} className="block">{CardContent}</Link> : CardContent;
+};
 
 export default DashboardHome;

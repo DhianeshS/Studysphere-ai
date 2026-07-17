@@ -6,6 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { qaPairs } from '../../data/qa_pairs';
 
 type Message = {
   id: string;
@@ -42,15 +43,10 @@ const AIChat = () => {
       if (!user) return;
       try {
         setLoadingSessions(true);
-        // Note: Real table should be 'chat_sessions' based on a complete schema. 
-        // We will just catch the error if it doesn't exist yet.
-        const { data, error } = await supabase
-          .from('chat_sessions')
-          .select('id, title, created_at')
-          .order('created_at', { ascending: false });
-          
-        if (error && error.code !== '42P01') throw error; // Ignore undefined table
-        if (data) setSessions(data);
+        // Mock empty sessions for the local version
+        setSessions([
+          { id: '1', title: 'Study session #1', created_at: new Date().toISOString() }
+        ]);
       } catch (err) {
         console.error("Error fetching sessions:", err);
       } finally {
@@ -101,16 +97,51 @@ const AIChat = () => {
     setInput('');
     setIsTyping(true);
 
-    // Simulate API call to RAG backend
+    // Simulate AI logic engine
     setTimeout(() => {
+      const lowerInput = input.toLowerCase();
+      let aiResponse = "I'm a local AI assistant right now! I couldn't find an exact match for your question in my pre-loaded knowledge base. Please try asking one of the provided questions.";
+      
+      // Try to find a match in the qaPairs
+      const match = qaPairs.find(qa => qa.question.toLowerCase().includes(lowerInput) || lowerInput.includes(qa.question.toLowerCase()));
+      
+      if (match) {
+        aiResponse = match.answer;
+      } else {
+        // Fallback exact match or fuzzy match logic if needed, but since we are looking for includes, it's decent.
+        // Let's also do a simple word match if the full phrase is not found
+        const words = lowerInput.split(' ').filter(w => w.length > 3);
+        let bestMatch = null;
+        let bestScore = 0;
+        
+        for (const qa of qaPairs) {
+          const qLower = qa.question.toLowerCase();
+          let score = 0;
+          for (const word of words) {
+            if (qLower.includes(word)) score++;
+          }
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = qa;
+          }
+        }
+        
+        if (bestMatch && bestScore > 0) {
+          aiResponse = bestMatch.answer;
+        } else if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
+          aiResponse = "Hello there! 👋 I am your StudySphere AI tutor. How can I help you study today?";
+        }
+      }
+
+
       const newAssistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "API connection required to generate responses. Please configure Supabase and your AI Provider keys.",
+        content: aiResponse,
       };
       setMessages(prev => [...prev, newAssistantMsg]);
       setIsTyping(false);
-    }, 1000);
+    }, 1500);
   };
 
   const createNewChat = () => {
